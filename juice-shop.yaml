@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sample-apps
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: juice-shop
+  namespace: sample-apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: juice-shop
+  template:
+    metadata:
+      labels:
+        app: juice-shop
+    spec:
+      containers:
+      - name: juice-shop
+        image: bkimminich/juice-shop
+        ports:
+        - containerPort: 3000
+        resources:
+          limits: 
+            memory: 250Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: juice-shop-service
+  namespace: sample-apps
+spec:
+  selector:
+    app: juice-shop
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: juice-shop-ingress
+  namespace: sample-apps
+  annotations:
+    spec.ingressClassName: "nginx"
+spec:
+  rules:
+  - host: juice-shop.demo.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: juice-shop-service
+            port:
+              number: 80
